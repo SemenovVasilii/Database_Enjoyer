@@ -1,0 +1,142 @@
+name: database-enjoyer-production
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?Set POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:?Set POSTGRES_DB}
+    volumes:
+      - metadata_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  test-postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${TEST_POSTGRES_USER:?Set TEST_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${TEST_POSTGRES_PASSWORD:?Set TEST_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${TEST_POSTGRES_DB:?Set TEST_POSTGRES_DB}
+      SAMPLE_POSTGRES_USER: ${SAMPLE_POSTGRES_USER:?Set SAMPLE_POSTGRES_USER}
+      SAMPLE_POSTGRES_PASSWORD: ${SAMPLE_POSTGRES_PASSWORD:?Set SAMPLE_POSTGRES_PASSWORD}
+    volumes:
+      - sample_postgres_data:/var/lib/postgresql/data
+      - ./server/docker/fixtures/postgres.sql:/docker-entrypoint-initdb.d/001-fixtures.sql:ro
+      - ./server/docker/bootstrap/postgres-samples.sh:/docker-entrypoint-initdb.d/002-samples.sh:ro
+      - ./server/docker/samples:/samples:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  test-mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${TEST_MYSQL_ROOT_PASSWORD:?Set TEST_MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${TEST_MYSQL_DB:?Set TEST_MYSQL_DB}
+      MYSQL_USER: ${TEST_MYSQL_USER:?Set TEST_MYSQL_USER}
+      MYSQL_PASSWORD: ${TEST_MYSQL_PASSWORD:?Set TEST_MYSQL_PASSWORD}
+      SAMPLE_MYSQL_USER: ${SAMPLE_MYSQL_USER:?Set SAMPLE_MYSQL_USER}
+      SAMPLE_MYSQL_PASSWORD: ${SAMPLE_MYSQL_PASSWORD:?Set SAMPLE_MYSQL_PASSWORD}
+    volumes:
+      - sample_mysql_data:/var/lib/mysql
+      - ./server/docker/fixtures/mysql.sql:/docker-entrypoint-initdb.d/001-fixtures.sql:ro
+      - ./server/docker/bootstrap/mysql-samples.sh:/docker-entrypoint-initdb.d/002-samples.sh:ro
+      - ./server/docker/samples:/samples:ro
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'MYSQL_PWD="$${MYSQL_PASSWORD}" mysql -h 127.0.0.1 -u "$${MYSQL_USER}" "$${MYSQL_DATABASE}" -e "SELECT 1"',
+        ]
+      interval: 5s
+      timeout: 5s
+      start_period: 45s
+      retries: 20
+
+  test-mongo:
+    image: mongo:8.0
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${TEST_MONGO_ROOT_USER:?Set TEST_MONGO_ROOT_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${TEST_MONGO_ROOT_PASSWORD:?Set TEST_MONGO_ROOT_PASSWORD}
+      MONGO_INITDB_DATABASE: ${TEST_MONGO_DB:?Set TEST_MONGO_DB}
+      TEST_MONGO_USER: ${TEST_MONGO_USER:?Set TEST_MONGO_USER}
+      TEST_MONGO_PASSWORD: ${TEST_MONGO_PASSWORD:?Set TEST_MONGO_PASSWORD}
+      SAMPLE_MONGO_USER: ${SAMPLE_MONGO_USER:?Set SAMPLE_MONGO_USER}
+      SAMPLE_MONGO_PASSWORD: ${SAMPLE_MONGO_PASSWORD:?Set SAMPLE_MONGO_PASSWORD}
+    volumes:
+      - sample_mongo_data:/data/db
+      - sample_mongo_config:/data/configdb
+      - ./server/docker/fixtures/mongo.js:/docker-entrypoint-initdb.d/001-fixtures.js:ro
+      - ./server/docker/bootstrap/mongo-samples.sh:/docker-entrypoint-initdb.d/002-samples.sh:ro
+      - ./server/docker/samples:/samples:ro
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'mongosh --quiet --host 127.0.0.1 --username "$${MONGO_INITDB_ROOT_USERNAME}" --password "$${MONGO_INITDB_ROOT_PASSWORD}" --authenticationDatabase admin --eval "quit(db.adminCommand({ping: 1}).ok ? 0 : 1)"',
+        ]
+      interval: 5s
+      timeout: 5s
+      start_period: 30s
+      retries: 20
+
+  server:
+    build:
+      context: ./server
+      target: production
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      API_PORT: 3000
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      CORS_ORIGIN: ${CORS_ORIGIN:?Set CORS_ORIGIN}
+      CONNECTION_ENCRYPTION_KEY: ${CONNECTION_ENCRYPTION_KEY:?Set CONNECTION_ENCRYPTION_KEY}
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      start_period: 30s
+      retries: 10
+
+  web:
+    build:
+      context: ./web
+      target: production
+    restart: unless-stopped
+    ports:
+      - '127.0.0.1:${WEB_PORT:-8080}:80'
+    depends_on:
+      server:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -q -O /dev/null http://127.0.0.1/ || exit 1']
+      interval: 10s
+      timeout: 5s
+      start_period: 10s
+      retries: 10
+
+volumes:
+  metadata_postgres_data:
+  sample_postgres_data:
+  sample_mysql_data:
+  sample_mongo_data:
+  sample_mongo_config:

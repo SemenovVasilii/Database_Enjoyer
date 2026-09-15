@@ -1,0 +1,103 @@
+name: CI and production deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: database-enjoyer-production
+  cancel-in-progress: false
+
+jobs:
+  quality:
+    name: Check ${{ matrix.app }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [server, web]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: ${{ matrix.app }}/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ${{ matrix.app }}
+        run: npm ci
+
+      - name: Lint
+        working-directory: ${{ matrix.app }}
+        run: npm run lint
+
+      - name: Check formatting
+        working-directory: ${{ matrix.app }}
+        run: npm run format:check
+
+      - name: Build
+        working-directory: ${{ matrix.app }}
+        run: npm run build
+
+  deploy:
+    name: Deploy production
+    needs: quality
+    if: github.ref == 'refs/heads/main' && vars.DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment: production
+    env:
+      DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+      DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+      DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+      DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+      DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+    steps:
+      - name: Checkout verified commit
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+
+      - name: Configure SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          for name in DEPLOY_HOST DEPLOY_PORT DEPLOY_USER DEPLOY_SSH_KEY DEPLOY_KNOWN_HOSTS; do
+            if [[ -z "${!name:-}" ]]; then
+              echo "GitHub secret $name is required" >&2
+              exit 1
+            fi
+          done
+          if [[ ! "$DEPLOY_PORT" =~ ^[0-9]+$ ]]; then
+            echo 'DEPLOY_PORT must be numeric' >&2
+            exit 1
+          fi
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/database-enjoyer
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/database-enjoyer ~/.ssh/known_hosts
+
+      - name: Upload release
+        shell: bash
+        run: |
+          rsync -az --delete-delay \
+            --exclude='.git/' \
+            --exclude='.env.production' \
+            -e "ssh -i $HOME/.ssh/database-enjoyer -p $DEPLOY_PORT -o StrictHostKeyChecking=yes" \
+            ./ "$DEPLOY_USER@$DEPLOY_HOST:/opt/database-enjoyer/"
+
+      - name: Apply release
+        shell: bash
+        run: |
+          ssh -i "$HOME/.ssh/database-enjoyer" \
+            -p "$DEPLOY_PORT" \
+            -o StrictHostKeyChecking=yes \
+            "$DEPLOY_USER@$DEPLOY_HOST" \
+            'cd /opt/database-enjoyer && chmod +x deploy/deploy.sh && ./deploy/deploy.sh'

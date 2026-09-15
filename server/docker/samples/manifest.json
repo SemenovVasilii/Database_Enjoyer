@@ -1,0 +1,37 @@
+{
+  "downloadedAt": "2026-09-14",
+  "datasets": [
+    {
+      "name": "Pagila",
+      "version": "pagila-v3.1.0",
+      "source": "https://github.com/devrimgunduz/pagila/tree/pagila-v3.1.0",
+      "license": "MIT (LICENSE.txt); original Sakila BSD notices retained",
+      "adaptation": "Removed ALTER ... OWNER TO postgres from schema.sql; loaded by the configured local admin"
+    },
+    {
+      "name": "Sakila",
+      "version": "1.5",
+      "source": "https://downloads.mysql.com/docs/sakila-db.tar.gz",
+      "documentation": "https://dev.mysql.com/doc/sakila/en/",
+      "license": "BSD-3-Clause notices at the top of schema.sql and data.sql",
+      "adaptation": "Removed DROP SCHEMA IF EXISTS sakila from schema.sql; original retained beside adapted file"
+    },
+    {
+      "name": "MongoDB Restaurants",
+      "source": "https://raw.githubusercontent.com/mongodb/docs-assets/primer-dataset/primer-dataset.json",
+      "documentation": "https://www.mongodb.com/docs/manual/tutorial/import-export-examples/",
+      "adaptation": "JSONL imported with mongoimport, plus locally authored validator and indexes"
+    }
+  ],
+  "sha256": {
+    "sakila/data.sql": "8c228c678cec6ea9e5145ea868f48be87982252e806a547dcddb67758cadf174",
+    "sakila/schema.sql": "20ce9f88f5f1d4aa9e595891f7babbb23d21f111e19244e6995addb902abdb88",
+    "sakila/schema.original.sql": "b32170e1e2ad5828749b61a5ec896155bcd143104b076e5ee8a3a3b013f44915",
+    "pagila/data.sql": "fb81bec377687c83e11d2a24916ae28656d85550bf0ada798305bf7e2af9823b",
+    "pagila/schema.sql": "e4e8af54a0ea74d3dec72696e4f337551d826adf1e2fb6f2310d91168f3f6d4a",
+    "pagila/schema.original.sql": "8ce358e4c8014087b85296694a0893887bd7a4190e3ce407f2721b86b98e5707",
+    "pagila/LICENSE.txt": "516e7dac679ac1eeb62d5614b01c4e7318154e9a147377d6264954215997ff38",
+    "mongodb/setup.js": "b4e342d23a0c56875edeb85d3dfd2c8babb6a53562b76677faf100ce78274dde",
+    "mongodb/restaurants.jsonl": "445944d9c43c63906bbb23d9e57f3852150ada612047f88cbe96ea9482794b04"
+  }
+}

@@ -1,0 +1,160 @@
+@import 'tailwindcss';
+
+@theme inline {
+  --color-canvas: var(--theme-canvas);
+  --color-sidebar: var(--theme-sidebar);
+  --color-surface: var(--theme-surface);
+  --color-elevated: var(--theme-elevated);
+  --color-line: var(--theme-line);
+  --color-accent: var(--theme-accent);
+  --color-accent-hover: var(--theme-accent-hover);
+  --color-muted: var(--theme-muted);
+  --color-secondary: var(--theme-secondary);
+  --color-placeholder: var(--theme-placeholder);
+  --color-ink: var(--theme-ink);
+  --color-danger: var(--theme-danger);
+  --color-success: var(--theme-success);
+  --color-primary: var(--theme-primary);
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', 'Noto Sans', Arial,
+    sans-serif;
+  --font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+}
+
+:root {
+  --theme-canvas: #f2f4f7;
+  --theme-sidebar: #f9fafb;
+  --theme-surface: #ffffff;
+  --theme-elevated: #f9fafb;
+  --theme-line: #e9ebf0;
+  --theme-accent: #0033ff;
+  --theme-accent-hover: #002cde;
+  --theme-muted: #676f83;
+  --theme-secondary: #354052;
+  --theme-placeholder: #98a2b2;
+  --theme-ink: #101828;
+  --theme-danger: #d92d20;
+  --theme-success: #079455;
+  --theme-primary: #0033ff;
+  --field-normal: rgb(200 206 218 / 0.25);
+  --field-hover: rgb(200 206 218 / 0.14);
+  --field-border: #d0d5dc;
+  --overlay: rgb(16 24 40 / 0.4);
+}
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --theme-canvas: #1d1d20;
+  --theme-sidebar: #27272a;
+  --theme-surface: #222225;
+  --theme-elevated: #27272b;
+  --theme-line: rgb(200 206 218 / 0.14);
+  --theme-accent: #6694ff;
+  --theme-primary: #085afc;
+  --theme-accent-hover: #3072ff;
+  --theme-muted: rgb(200 206 218 / 0.6);
+  --theme-secondary: #d9d9de;
+  --theme-placeholder: rgb(200 206 218 / 0.4);
+  --theme-ink: #fbfbfc;
+  --theme-danger: #f97066;
+  --theme-success: #17b26a;
+  --field-normal: rgb(255 255 255 / 0.08);
+  --field-hover: rgb(255 255 255 / 0.03);
+  --field-border: #3a3a40;
+  --overlay: rgb(24 24 27 / 0.8);
+}
+
+@layer base {
+  :root {
+    color-scheme: light;
+    background: var(--theme-canvas);
+    color: var(--theme-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    margin: 0;
+    min-width: 320px;
+  }
+  button,
+  a,
+  input,
+  textarea,
+  select {
+    -webkit-tap-highlight-color: transparent;
+  }
+  button:not(:disabled),
+  select {
+    cursor: pointer;
+  }
+  button:disabled {
+    cursor: not-allowed;
+  }
+  *:focus-visible {
+    outline: 2px solid var(--theme-accent);
+    outline-offset: 2px;
+  }
+  ::selection {
+    background: color-mix(in srgb, var(--theme-accent) 15%, transparent);
+    color: var(--theme-ink);
+  }
+  ::-webkit-scrollbar {
+    width: 7px;
+    height: 7px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--field-border);
+    border-radius: 8px;
+  }
+}
+
+@layer components {
+  .panel {
+    border: 1px solid var(--theme-line);
+    border-radius: 12px;
+    background: var(--theme-surface);
+    box-shadow: 0 2px 4px rgb(9 9 11 / 0.03);
+  }
+  .field {
+    width: 100%;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: var(--field-normal);
+    padding: 7px 12px;
+    font-size: 13px;
+    line-height: 20px;
+    color: var(--theme-secondary);
+    transition:
+      background 150ms,
+      border-color 150ms,
+      box-shadow 150ms;
+  }
+  .field::placeholder {
+    color: var(--theme-placeholder);
+  }
+  .field:hover {
+    background: var(--field-hover);
+    border-color: var(--field-border);
+  }
+  .field:focus-visible {
+    background: var(--theme-elevated);
+    border-color: var(--theme-accent);
+    box-shadow: 0 0 0 3px rgb(0 51 255 / 0.08);
+    outline: none;
+  }
+  .eyebrow {
+    color: var(--theme-muted);
+    font-size: 12px;
+    line-height: 16px;
+    letter-spacing: 0.04em;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+  .modal {
+    box-shadow:
+      0 20px 48px rgb(9 9 11 / 0.18),
+      0 4px 12px rgb(9 9 11 / 0.08);
+  }
+  .modal::backdrop {
+    background: var(--overlay);
+  }
+}

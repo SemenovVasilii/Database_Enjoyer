@@ -1,0 +1,78 @@
+{
+  "name": "commerce",
+  "engine": "postgresql",
+  "description": "Пример снимка: каталог товаров, пользователи и заказы. Это демонстрационные метаданные.",
+  "schemas": [
+    {
+      "name": "public",
+      "tables": [
+        {
+          "name": "users",
+          "comment": "Пользователи магазина",
+          "columns": [
+            {
+              "name": "id",
+              "dataType": "uuid",
+              "nullable": false,
+              "primaryKey": true,
+              "defaultValue": "gen_random_uuid()"
+            },
+            {
+              "name": "email",
+              "dataType": "varchar(255)",
+              "nullable": false,
+              "comment": "Email пользователя"
+            },
+            { "name": "display_name", "dataType": "varchar(120)", "nullable": true },
+            {
+              "name": "created_at",
+              "dataType": "timestamptz",
+              "nullable": false,
+              "defaultValue": "now()"
+            }
+          ]
+        },
+        {
+          "name": "products",
+          "comment": "Каталог товаров",
+          "columns": [
+            { "name": "id", "dataType": "uuid", "nullable": false, "primaryKey": true },
+            { "name": "name", "dataType": "varchar(200)", "nullable": false },
+            { "name": "price", "dataType": "numeric(12,2)", "nullable": false },
+            { "name": "active", "dataType": "boolean", "nullable": false, "defaultValue": "true" }
+          ]
+        },
+        {
+          "name": "orders",
+          "comment": "Заказы",
+          "columns": [
+            { "name": "id", "dataType": "uuid", "nullable": false, "primaryKey": true },
+            { "name": "user_id", "dataType": "uuid", "nullable": false },
+            { "name": "total", "dataType": "numeric(12,2)", "nullable": false },
+            {
+              "name": "status",
+              "dataType": "varchar(32)",
+              "nullable": false,
+              "defaultValue": "'pending'"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "analytics",
+      "tables": [
+        {
+          "name": "events",
+          "comment": "События аналитики",
+          "columns": [
+            { "name": "id", "dataType": "bigint", "nullable": false, "primaryKey": true },
+            { "name": "event_name", "dataType": "text", "nullable": false },
+            { "name": "payload", "dataType": "jsonb", "nullable": true },
+            { "name": "occurred_at", "dataType": "timestamptz", "nullable": false }
+          ]
+        }
+      ]
+    }
+  ]
+}
