@@ -7,9 +7,12 @@ import {
   Database,
   FileJson,
   FolderOpen,
+  LogOut,
   PanelLeft,
 } from 'lucide-react';
+import { useDispatch } from 'react-redux';
 import { useGetDatabasesQuery } from '@/entities/database';
+import { clearCredentials, useMeQuery } from '@/features/auth';
 import { ThemeSwitch } from '@/shared/ui';
 import { baseApi } from '@/shared/api';
 
@@ -20,6 +23,8 @@ const healthApi = baseApi.injectEndpoints({
 });
 
 export function WorkspaceShell({ children }: { children: ReactNode }) {
+  const dispatch = useDispatch();
+  const { data: user } = useMeQuery();
   const { data: databases } = useGetDatabasesQuery();
   const {
     data: health,
@@ -105,12 +110,26 @@ export function WorkspaceShell({ children }: { children: ReactNode }) {
         </div>
         <div className="flex items-center gap-3 border-t border-line p-5">
           <div className="flex size-8 items-center justify-center rounded-lg bg-accent/8 text-xs font-semibold text-accent">
-            DE
+            {user?.email.slice(0, 2).toUpperCase() ?? 'DE'}
           </div>
-          <div>
-            <p className="text-xs">Локальное пространство</p>
-            <p className="text-[10px] text-muted">DatabaseEnjoyer · v0.1</p>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-xs" title={user?.email}>
+              {user?.email ?? 'Загружаем профиль…'}
+            </p>
+            <p className="text-[10px] text-muted">Личный каталог</p>
           </div>
+          <button
+            type="button"
+            aria-label="Выйти"
+            title="Выйти"
+            className="rounded-md p-1.5 text-muted transition hover:bg-elevated hover:text-danger"
+            onClick={() => {
+              dispatch(clearCredentials());
+              dispatch(baseApi.util.resetApiState());
+            }}
+          >
+            <LogOut size={15} />
+          </button>
         </div>
       </aside>
       <div className="flex min-w-0 flex-1 flex-col lg:ml-64">

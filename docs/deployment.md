@@ -12,6 +12,7 @@ docker compose ps
 Доступ: web localhost:5173, REST localhost:3000/api, Swagger localhost:3000/api/docs.
 Шесть сервисов: два приложения, PostgreSQL метаданных и три тестовых сервера.
 name Compose-проекта `verdant` сохранено ради прежних volumes. Приложение называется DatabaseEnjoyer.
+Откройте web, введите email и возьмите локальный OTP из `docker compose logs server`.
 
 Nest работает в watch, Vite — с HMR. Изменение src подключено bind mounts; web/public тоже.
 После изменения зависимостей, index.html или конфигураций пересоберите соответствующий сервис:
@@ -30,8 +31,8 @@ server. Для existing volumes новые sample databases загружаютс
 
 | Файл | Назначение |
 | --- | --- |
-| Корневой .env.example → .env | Общий Compose, порты, настройки служебной БД, bootstrap admins, read-only sample users, ключ шифрования server |
-| server/.env.example → server/.env | Независимый запуск Nest на хосте: DATABASE_URL, API_PORT, CORS_ORIGIN, CONNECTION_ENCRYPTION_KEY |
+| Корневой .env.example → .env | Общий Compose, БД, sample users, шифрование, JWT, OTP и Resend |
+| server/.env.example → server/.env | Независимый Nest: DATABASE_URL, CORS, шифрование, email auth и Resend |
 | web/.env.example → web/.env | Независимый Vite: VITE_API_URL и API_PROXY_TARGET |
 
 В Compose server получает DATABASE_URL с host=db; внутри контейнеров приложения не
@@ -46,6 +47,11 @@ node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
 Сохраните ключ и резервную копию вместе с секретами развёртывания. Не меняйте его у уже
 сохранённых профилей без перешифрования connection_secrets. В .env.example находится
 открытый ключ только для локальной разработки. Не коммитьте .env.
+
+Также создайте три независимых секрета для access JWT, refresh JWT и digest OTP. Каждый должен
+содержать минимум 32 символа. В development пустые RESEND-переменные включают вывод кода в
+лог; в production настройте API key и отправителя подтверждённого домена. Полное описание —
+[authentication.md](authentication.md).
 
 Порты и креды тестовых серверов — [test-databases.md](test-databases.md).
 Изменение env пароля не меняет пользователя в существующем volume: bootstrap не ротирует
@@ -84,16 +90,13 @@ docker compose exec -T db sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' > m
 В копии находятся зашифрованные секреты; для восстановления нужен прежний ключ шифрования.
 Дампы внешних БД в резервную копию каталога не входят.
 
-## Production target и текущая граница эксплуатации
+## Production target
 
 Dockerfile каждого приложения имеет production target. Web отдаёт статическую сборку через
 Nginx (upstream server:3000); server — node dist/main.js, без dev-зависимостей, под non-root.
-Для развёртывания подготовьте Compose с production targets, без bind mounts, с приватным
-ключом, подходящими CORS, TLS и защитой доступа.
-
-Текущий стек предназначен для локального доверенного пользователя: аутентификации приложения,
-multi-user RBAC и ограничения сетевых адресов подключений пока нет. Порты привязаны к 127.0.0.1.
-До публичного или многопользовательского запуска нужна отдельная задача на эти механизмы.
+Production Compose использует passwordless email auth и изолирует каталог по owner_id.
+RBAC и запрет отдельных сетевых диапазонов для подключений пока не реализованы. Порты
+инфраструктуры привязаны к 127.0.0.1 или доступны только внутри Compose-сети.
 
 Готовый production Compose, SSH pipeline и первичная настройка Ubuntu описаны в
 [production-deployment.md](production-deployment.md). Pipeline запускается после push в

@@ -26,6 +26,7 @@ async function bootstrap() {
         'Connect to PostgreSQL, MySQL and MongoDB; explore versioned metadata and live data.',
       )
       .setVersion('0.1.0')
+      .addBearerAuth()
       .build(),
   );
   SwaggerModule.setup('api/docs', app, document);

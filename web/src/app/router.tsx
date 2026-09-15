@@ -4,20 +4,16 @@ import {
   createRouter,
   lazyRouteComponent,
   Link,
-  Outlet,
 } from '@tanstack/react-router';
 import { WorkspacePage } from '@/pages/workspace';
 import { DatabasePage } from '@/pages/database';
-import { WorkspaceShell } from '@/widgets/workspace-shell';
+import { SignInPage } from '@/pages/sign-in';
+import { AuthenticatedLayout } from './authenticated-layout';
 
 const sqlPageComponent = lazyRouteComponent(() => import('@/pages/sql'), 'SqlPage');
 
 const rootRoute = createRootRoute({
-  component: () => (
-    <WorkspaceShell>
-      <Outlet />
-    </WorkspaceShell>
-  ),
+  component: AuthenticatedLayout,
   notFoundComponent: () => (
     <div className="p-10">
       <h1 className="text-2xl">Страница не найдена</h1>
@@ -37,6 +33,11 @@ const rootRoute = createRootRoute({
       </button>
     </div>
   ),
+});
+const signInRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/sign-in',
+  component: SignInPage,
 });
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -58,7 +59,7 @@ const sqlRoute = createRoute({
 });
 
 export const router = createRouter({
-  routeTree: rootRoute.addChildren([indexRoute, databaseRoute, sqlRoute]),
+  routeTree: rootRoute.addChildren([signInRoute, indexRoute, databaseRoute, sqlRoute]),
   defaultPreload: 'intent',
 });
 

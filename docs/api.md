@@ -2,11 +2,16 @@
 
 Base URL `/api`. JSON; валидация отклоняет неизвестные поля и неверные UUID/порты/лимиты.
 Swagger: http://localhost:3000/api/docs. Секреты присутствуют только в теле POST запроса,
-никогда в GET ответах.
+никогда в GET ответах. Кроме health и `/auth/*`, маршруты требуют
+`Authorization: Bearer <accessToken>`.
 
 | Метод | Маршрут | Назначение |
 | --- | --- | --- |
 | GET | /health | Состояние приложения и PostgreSQL каталога |
+| POST | /auth/otp/send | Отправить шестизначный код на email |
+| POST | /auth/otp/verify | Проверить код, создать пользователя и получить пару JWT |
+| POST | /auth/refresh | Обновить пару JWT по refresh token |
+| GET | /auth/me | Текущий пользователь |
 | GET | /databases | Общий каталог подключений и офлайн-снимков |
 | GET | /databases/:id | Структура подключения или JSON-снимка |
 | POST | /databases | Дополнительный импорт JSON-снимка, до 5 MB |
@@ -20,6 +25,27 @@ Swagger: http://localhost:3000/api/docs. Секреты присутствуют
 | GET | /connections/:id/objects/:objectId/rows?offset=0&limit=50 | Страница живых данных |
 | POST | /connections/:id/query | Выполнить SQL в PostgreSQL или MySQL |
 | DELETE | /connections/:id | Удалить профиль, секрет и локальные версии, 204 |
+
+## Вход по email
+
+```http
+POST /api/auth/otp/send HTTP/1.1
+Content-Type: application/json
+
+{ "email": "you@example.com" }
+```
+
+```http
+POST /api/auth/otp/verify HTTP/1.1
+Content-Type: application/json
+
+{ "email": "you@example.com", "code": "123456" }
+```
+
+Успешный ответ verify/refresh: `{ "accessToken": "...", "refreshToken": "..." }`.
+Код действует 10 минут и допускает пять неверных попыток; повторная отправка — не чаще раза
+в минуту. Первый успешный вход автоматически создаёт пользователя. 401 означает неверный
+код или токен, 410 — истёкший код, 429 — ранний повтор либо исчерпанные попытки.
 
 ## Создание профиля
 

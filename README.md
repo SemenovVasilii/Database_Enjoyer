@@ -21,7 +21,8 @@ npm --prefix server run samples:load
 На пустых volumes учебные базы загружаются автоматически. Последняя команда нужна
 для volumes, созданных раньше; существующие базы примеров она не перезаписывает.
 
-Откройте http://localhost:5173 → **Подключить базу** → выберите движок →
+Откройте http://localhost:5173, войдите по email и возьмите локальный код из
+`docker compose logs server`. Затем нажмите **Подключить базу** → выберите движок →
 **Подставить адрес и пользователя** → введите пароль из [реквизитов](docs/test-databases.md) →
 **Проверить** → **Подключить**. Откройте объект и вкладку **Данные** либо перейдите в
 **SQL-редактор**, выберите подключение и выполните запрос.
@@ -35,6 +36,7 @@ npm --prefix server run samples:load
 
 - [Оглавление](docs/README.md)
 - [Развёртывание и переменные окружения](docs/deployment.md)
+- [Авторизация по email](docs/authentication.md)
 - [Production-сервер и GitHub Actions](docs/production-deployment.md)
 - [Тестовые БД: адреса, пароли, дампы](docs/test-databases.md)
 - [Архитектура приложений](docs/architecture.md)

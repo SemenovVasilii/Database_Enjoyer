@@ -29,29 +29,36 @@ export class DatabasesService {
     private readonly connections: ConnectionsService,
   ) {}
 
-  async list(): Promise<DatabaseSummary[]> {
-    const result = await this.database.query<DatabaseRow>(`
+  async list(userId: string): Promise<DatabaseSummary[]> {
+    const result = await this.database.query<DatabaseRow>(
+      `
       SELECT id, name, engine, description, imported_at, schema_count, table_count, column_count
       FROM databases
+      WHERE owner_id = $1
       ORDER BY imported_at DESC, id
-    `);
-    return [...(await this.connections.list()), ...result.rows.map((row) => this.summary(row))];
+    `,
+      [userId],
+    );
+    return [
+      ...(await this.connections.list(userId)),
+      ...result.rows.map((row) => this.summary(row)),
+    ];
   }
 
-  async find(id: string): Promise<DatabaseDetails> {
+  async find(userId: string, id: string): Promise<DatabaseDetails> {
     const result = await this.database.query<DatabaseRow>(
       `
       SELECT id, name, engine, description, imported_at, schema_count, table_count, column_count, schemas
-      FROM databases WHERE id = $1
+      FROM databases WHERE id = $1 AND owner_id = $2
     `,
-      [id],
+      [id, userId],
     );
     const row = result.rows[0];
-    if (!row) return this.connections.find(id);
+    if (!row) return this.connections.find(userId, id);
     return { ...this.summary(row), schemas: row.schemas! };
   }
 
-  async import(input: ImportDatabaseDto): Promise<DatabaseDetails> {
+  async import(userId: string, input: ImportDatabaseDto): Promise<DatabaseDetails> {
     this.ensureUnique(
       input.schemas.map((schema) => schema.name),
       'schema',
@@ -74,11 +81,12 @@ export class DatabasesService {
     }
     const result = await this.database.query<DatabaseRow>(
       `
-      INSERT INTO databases (name, engine, description, schemas, schema_count, table_count, column_count)
-      VALUES ($1, $2, $3, $4::jsonb, $5, $6, $7)
+      INSERT INTO databases (owner_id, name, engine, description, schemas, schema_count, table_count, column_count)
+      VALUES ($1, $2, $3, $4, $5::jsonb, $6, $7, $8)
       RETURNING id, name, engine, description, imported_at, schema_count, table_count, column_count, schemas
     `,
       [
+        userId,
         input.name,
         input.engine,
         input.description ?? '',
@@ -92,9 +100,12 @@ export class DatabasesService {
     return { ...this.summary(row), schemas: row.schemas! };
   }
 
-  async remove(id: string): Promise<void> {
-    const result = await this.database.query('DELETE FROM databases WHERE id = $1', [id]);
-    if (!result.rowCount) await this.connections.remove(id);
+  async remove(userId: string, id: string): Promise<void> {
+    const result = await this.database.query(
+      'DELETE FROM databases WHERE id = $1 AND owner_id = $2',
+      [id, userId],
+    );
+    if (!result.rowCount) await this.connections.remove(userId, id);
   }
 
   private ensureUnique(names: string[], object: string) {

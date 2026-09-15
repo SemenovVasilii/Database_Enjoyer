@@ -4,6 +4,7 @@
 | --- | --- |
 | [Развёртывание](deployment.md) | Compose, отдельный запуск, env, обновления, резервное копирование |
 | [Production-деплой](production-deployment.md) | Ubuntu, Docker, Nginx, TLS и GitHub Actions |
+| [Авторизация](authentication.md) | Email OTP, JWT, Resend, пользователи и владение каталогом |
 | [Тестовые базы](test-databases.md) | Подключение к локальным примерам и происхождение дампов |
 | [Архитектура](architecture.md) | Границы приложений и путь от реквизитов до табличных данных |
 | [Модель данных](data-model.md) | Таблицы служебного PostgreSQL, связи, версии, секреты |

@@ -36,33 +36,41 @@ const profileSql = `SELECT c.*,s.completed_at,s.schema_count,s.object_count,s.co
 @Injectable()
 export class ConnectionsRepository {
   constructor(private readonly db: DatabaseService) {}
-  async list(): Promise<DatabaseSummary[]> {
-    return (await this.db.query<ProfileRow>(profileSql + ' ORDER BY c.created_at DESC')).rows.map(
-      (r) => this.summary(r),
-    );
+  async list(userId: string): Promise<DatabaseSummary[]> {
+    return (
+      await this.db.query<ProfileRow>(
+        profileSql + ' WHERE c.owner_id=$1 ORDER BY c.created_at DESC',
+        [userId],
+      )
+    ).rows.map((r) => this.summary(r));
   }
-  async profile(id: string): Promise<ProfileRow> {
-    const row = (await this.db.query<ProfileRow>(profileSql + ' WHERE c.id=$1', [id])).rows[0];
+  async profile(userId: string, id: string): Promise<ProfileRow> {
+    const row = (
+      await this.db.query<ProfileRow>(profileSql + ' WHERE c.id=$1 AND c.owner_id=$2', [id, userId])
+    ).rows[0];
     if (!row) throw new NotFoundException('Подключение не найдено');
     return row;
   }
-  async credentials(id: string) {
+  async credentials(userId: string, id: string) {
     const row = (
       await this.db.query<EncryptedSecret & QueryResultRow>(
-        'SELECT ciphertext,nonce,auth_tag FROM connection_secrets WHERE connection_id=$1',
-        [id],
+        `SELECT s.ciphertext,s.nonce,s.auth_tag FROM connection_secrets s
+         JOIN connections c ON c.id=s.connection_id
+         WHERE s.connection_id=$1 AND c.owner_id=$2`,
+        [id, userId],
       )
     ).rows[0];
     if (!row) throw new NotFoundException('Реквизиты подключения не найдены');
     return row;
   }
-  async create(id: string, input: ConnectionInput, secret: EncryptedSecret) {
+  async create(userId: string, id: string, input: ConnectionInput, secret: EncryptedSecret) {
     await this.db.transaction(async (c) => {
       await c.query(
-        `INSERT INTO connections(id,name,engine,host,port,database_name,username,auth_database,tls,description)
-        VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+        `INSERT INTO connections(id,owner_id,name,engine,host,port,database_name,username,auth_database,tls,description)
+        VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
         [
           id,
+          userId,
           input.name,
           input.engine,
           input.host,
@@ -196,8 +204,8 @@ export class ConnectionsRepository {
       );
     });
   }
-  async find(id: string): Promise<DatabaseDetails> {
-    const profile = await this.profile(id);
+  async find(userId: string, id: string): Promise<DatabaseDetails> {
+    const profile = await this.profile(userId, id);
     if (!profile.active_sync_id) return { ...this.summary(profile), schemas: [] };
     const sync = profile.active_sync_id;
     const [namespaces, objects, columns, indexes, constraints] = await Promise.all([
@@ -266,8 +274,8 @@ export class ConnectionsRepository {
     }));
     return { ...this.summary(profile), schemas };
   }
-  async history(id: string) {
-    await this.profile(id);
+  async history(userId: string, id: string) {
+    await this.profile(userId, id);
     return (
       await this.db.query(
         `SELECT id,status,started_at,completed_at,server_version,error_message,schema_count,object_count,column_count FROM metadata_syncs WHERE connection_id=$1 ORDER BY started_at DESC LIMIT 20`,
@@ -275,8 +283,11 @@ export class ConnectionsRepository {
       )
     ).rows;
   }
-  async remove(id: string) {
-    const result = await this.db.query('DELETE FROM connections WHERE id=$1', [id]);
+  async remove(userId: string, id: string) {
+    const result = await this.db.query('DELETE FROM connections WHERE id=$1 AND owner_id=$2', [
+      id,
+      userId,
+    ]);
     if (!result.rowCount) throw new NotFoundException('Подключение не найдено');
   }
   private summary(row: ProfileRow): DatabaseSummary {

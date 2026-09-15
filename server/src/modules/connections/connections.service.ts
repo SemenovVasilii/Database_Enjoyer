@@ -35,17 +35,17 @@ export class ConnectionsService {
     private readonly repository: ConnectionsRepository,
     private readonly secrets: SecretsService,
   ) {}
-  list() {
-    return this.repository.list();
+  list(userId: string) {
+    return this.repository.list(userId);
   }
-  find(id: string) {
-    return this.repository.find(id);
+  find(userId: string, id: string) {
+    return this.repository.find(userId, id);
   }
-  remove(id: string) {
-    return this.repository.remove(id);
+  remove(userId: string, id: string) {
+    return this.repository.remove(userId, id);
   }
-  history(id: string) {
-    return this.repository.history(id);
+  history(userId: string, id: string) {
+    return this.repository.history(userId, id);
   }
   async test(input: ConnectionInput) {
     const started = Date.now();
@@ -56,21 +56,21 @@ export class ConnectionsService {
       throw new BadGatewayException(connectionError(error));
     }
   }
-  async create(input: ConnectionInput) {
+  async create(userId: string, input: ConnectionInput) {
     await this.test(input);
     const id = randomUUID();
-    await this.repository.create(id, input, this.secrets.encrypt(id, input.password));
+    await this.repository.create(userId, id, input, this.secrets.encrypt(id, input.password));
     try {
-      await this.refresh(id);
+      await this.refresh(userId, id);
     } catch (error) {
       if (!(error instanceof BadGatewayException))
         throw error; /* Failed sync is visible in the saved profile; the user can retry. */
     }
-    return this.find(id);
+    return this.find(userId, id);
   }
-  private async input(id: string): Promise<ConnectionInput> {
-    const row = await this.repository.profile(id);
-    const secret = await this.repository.credentials(id);
+  private async input(userId: string, id: string): Promise<ConnectionInput> {
+    const row = await this.repository.profile(userId, id);
+    const secret = await this.repository.credentials(userId, id);
     return {
       name: row.name,
       engine: row.engine,
@@ -84,8 +84,8 @@ export class ConnectionsService {
       description: row.description,
     };
   }
-  async refresh(id: string) {
-    const input = await this.input(id);
+  async refresh(userId: string, id: string) {
+    const input = await this.input(userId, id);
     let sync: string;
     try {
       sync = await this.repository.beginSync(id);
@@ -108,10 +108,10 @@ export class ConnectionsService {
       await this.repository.failSync(id, sync, message);
       throw new BadGatewayException(message);
     }
-    return this.find(id);
+    return this.find(userId, id);
   }
-  async rows(id: string, objectId: string, limit: number, offset: number) {
-    const [catalog, input] = await Promise.all([this.find(id), this.input(id)]);
+  async rows(userId: string, id: string, objectId: string, limit: number, offset: number) {
+    const [catalog, input] = await Promise.all([this.find(userId, id), this.input(userId, id)]);
     const namespace = catalog.schemas.find((n) => n.tables.some((t) => t.id === objectId));
     const object = namespace?.tables.find((t) => t.id === objectId);
     if (!namespace || !object)
@@ -123,8 +123,8 @@ export class ConnectionsService {
     }
   }
 
-  async executeSql(id: string, sql: string, maxRows: number) {
-    const input = await this.input(id);
+  async executeSql(userId: string, id: string, sql: string, maxRows: number) {
+    const input = await this.input(userId, id);
     const execute = this.connectors[input.engine].executeSql;
     if (!execute)
       throw new UnprocessableEntityException({

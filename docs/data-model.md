@@ -2,13 +2,16 @@
 
 Служебный PostgreSQL — сервис `db`, база `verdant` (имя сохранено от первой версии,
 чтобы использовать прежний volume). Миграция `003-connections.sql` добавляет каталог
-подключений; старые JSON-снимки не удаляются.
+подключений; `004-email-auth.sql` добавляет пользователей, коды входа и владельцев.
+Старые JSON-снимки не удаляются.
 
 ## Таблицы
 
 | Таблица | Содержимое и ключи |
 | --- | --- |
-| `connections` | UUID профиля, название, движок, host/port, database_name, username, auth_database, tls, description, active_sync_id, last_checked_at, last_error, даты создания/изменения |
+| `users` | UUID пользователя, нормализованный уникальный email, created_at и last_login_at |
+| `auth_email_codes` | Email, SHA-256 digest одноразового кода, число попыток, sent_at и expires_at; успешный код удаляется |
+| `connections` | UUID профиля, owner_id, название, движок, host/port, database_name, username, auth_database, tls, description, active_sync_id, last_checked_at, last_error, даты создания/изменения |
 | `connection_secrets` | Одна запись на connection_id: пароль в AES-256-GCM ciphertext, 12-байтовый nonce, 16-байтовый auth_tag, key_version, updated_at |
 | `metadata_syncs` | UUID попытки, connection_id, running/success/failed, started_at/completed_at, server_version, безопасная ошибка, количества схем/объектов/полей |
 | `metadata_namespaces` | UUID, sync_id, имя схемы PostgreSQL либо базы MySQL/MongoDB; UNIQUE(sync_id,name) |
@@ -16,10 +19,11 @@
 | `metadata_columns` | UUID, object_id, имя, ordinal, data_type, nullable, primary_key, default_value, comment, extra; уникальны имя и ordinal внутри объекта |
 | `metadata_indexes` | UUID, object_id, имя, unique/primary, упорядоченные columns, definition, extra |
 | `metadata_constraints` | UUID, object_id, имя, kind, columns, definition, referenced_namespace/object/columns, extra |
-| `databases` | Прежний дополнительный офлайн-каталог: имя, движок, description, JSONB schemas, счётчики и imported_at. Не хранит реквизитов и не используется коннекторами |
+| `databases` | Прежний дополнительный офлайн-каталог: owner_id, имя, движок, description, JSONB schemas, счётчики и imported_at. Не хранит реквизитов и не используется коннекторами |
 | `schema_migrations` | Имя применённой SQL-миграции и applied_at |
 
-Связи: `connections → metadata_syncs → metadata_namespaces → metadata_objects →
+Владелец связан как `users → connections` и `users → databases` с ON DELETE CASCADE.
+Каталог связан как `connections → metadata_syncs → metadata_namespaces → metadata_objects →
 metadata_columns / metadata_indexes / metadata_constraints`. Секрет связан напрямую
 с профилем. Все дочерние записи имеют FK с ON DELETE CASCADE.
 
@@ -78,3 +82,15 @@ key_version=1 зарезервирован под будущую миграци�
 SQL workspace также не добавляет таблиц истории: текст запроса, время и result sets живут
 только в текущем состоянии web-клиента. Черновик SQL хранится в localStorage браузера по
 ключу connectionId и не содержит реквизитов подключения.
+
+## Данные авторизации
+
+Открытый OTP не записывается: сервер сохраняет digest из нормализованного email, кода и
+`AUTH_OTP_PEPPER`. Коды действуют 10 минут, заменяются при повторной отправке и блокируются
+после пяти неверных попыток. Access/refresh JWT не сохраняются в PostgreSQL. Поэтому удаление
+пользователя прекращает доступ при следующей проверке guard, но точечный отзыв токена без
+удаления пользователя пока невозможен.
+
+`owner_id IS NULL` допустим только для записей, созданных до миграции. Вход email из
+`AUTH_BOOTSTRAP_EMAIL` назначает такие записи этому пользователю. Все новые подключения и
+снимки всегда создаются с владельцем; API никогда не возвращает записи с NULL другому аккаунту.
