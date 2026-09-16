@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { Link, useParams } from '@tanstack/react-router';
-import { ArrowLeft, Code2, Database, Layers, Table2 } from 'lucide-react';
+import { ArrowLeft, Code2, Database, GitFork, Layers, Table2 } from 'lucide-react';
 import { useGetDatabaseQuery, useSyncConnectionMutation } from '@/entities/database';
 import { DeleteDatabaseButton } from '@/features/delete-database';
 import { EditConnectionButton } from '@/features/connect-database';
@@ -57,6 +57,14 @@ export function DatabasePage() {
                 </div>
               </div>
               <div className="flex shrink-0 flex-wrap gap-2">
+                <Link
+                  to="/er"
+                  search={{ connection: database.id }}
+                  className="inline-flex min-h-9 items-center justify-center gap-2 rounded-[10px] border border-ink/14 bg-surface px-3 py-2 text-sm leading-4 font-semibold text-secondary shadow-[0_1px_2px_rgba(9,9,11,0.05)] transition hover:bg-elevated"
+                >
+                  <GitFork size={15} />
+                  ER
+                </Link>
                 {database.source === 'connection' &&
                   (database.engine === 'postgresql' || database.engine === 'mysql') && (
                     <Link

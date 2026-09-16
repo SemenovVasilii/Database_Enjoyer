@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Link, useRouterState } from '@tanstack/react-router';
-import { Code2, Database, FileJson, FolderOpen, LogOut, PanelLeft } from 'lucide-react';
+import { Code2, Database, FileJson, FolderOpen, GitFork, LogOut, PanelLeft } from 'lucide-react';
 import { useDispatch } from 'react-redux';
 import { useGetDatabasesQuery } from '@/entities/database';
 import { clearCredentials, useMeQuery } from '@/features/auth';
@@ -62,6 +62,14 @@ export function WorkspaceShell({ children }: { children: ReactNode }) {
             <Code2 size={17} />
             SQL-редактор
           </Link>
+          <Link
+            to="/er"
+            search={{ connection: undefined }}
+            className={`mt-1 flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition ${pathname === '/er' ? 'bg-accent/8 font-semibold text-accent' : 'font-medium text-secondary hover:bg-line/60'}`}
+          >
+            <GitFork size={17} />
+            ER-диаграмма
+          </Link>
         </nav>
         <div className="mt-8 min-h-0 flex-1 overflow-auto px-4">
           <p className="eyebrow mb-3 px-3">Каталог</p>
@@ -120,7 +128,9 @@ export function WorkspaceShell({ children }: { children: ReactNode }) {
                 ? 'Базы данных'
                 : pathname === '/sql'
                   ? 'SQL-редактор'
-                  : 'Обозреватель структуры'}
+                  : pathname === '/er'
+                    ? 'ER-диаграмма'
+                    : 'Обозреватель структуры'}
             </span>
           </div>
           <div className="flex items-center gap-3">

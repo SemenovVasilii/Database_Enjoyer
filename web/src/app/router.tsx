@@ -11,6 +11,7 @@ import { SignInPage } from '@/pages/sign-in';
 import { AuthenticatedLayout } from './authenticated-layout';
 
 const sqlPageComponent = lazyRouteComponent(() => import('@/pages/sql'), 'SqlPage');
+const erPageComponent = lazyRouteComponent(() => import('@/pages/er'), 'ErPage');
 
 const rootRoute = createRootRoute({
   component: AuthenticatedLayout,
@@ -49,6 +50,14 @@ const databaseRoute = createRoute({
   path: '/databases/$databaseId',
   component: DatabasePage,
 });
+const erRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/er',
+  validateSearch: (search: Record<string, unknown>) => ({
+    connection: typeof search.connection === 'string' ? search.connection : undefined,
+  }),
+  component: erPageComponent,
+});
 const sqlRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/sql',
@@ -59,7 +68,7 @@ const sqlRoute = createRoute({
 });
 
 export const router = createRouter({
-  routeTree: rootRoute.addChildren([signInRoute, indexRoute, databaseRoute, sqlRoute]),
+  routeTree: rootRoute.addChildren([signInRoute, indexRoute, databaseRoute, sqlRoute, erRoute]),
   defaultPreload: 'intent',
 });
 
