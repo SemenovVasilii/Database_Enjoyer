@@ -88,6 +88,32 @@ export class ConnectionsRepository {
       );
     });
   }
+  async update(id: string, input: ConnectionInput, secret?: EncryptedSecret) {
+    await this.db.transaction(async (c) => {
+      await c.query(
+        `UPDATE connections
+         SET name=$2,engine=$3,host=$4,port=$5,database_name=$6,username=$7,auth_database=$8,tls=$9,description=$10,updated_at=now()
+         WHERE id=$1`,
+        [
+          id,
+          input.name,
+          input.engine,
+          input.host,
+          input.port,
+          input.databaseName,
+          input.username,
+          input.authDatabase || null,
+          input.tls ?? false,
+          input.description ?? '',
+        ],
+      );
+      if (secret)
+        await c.query(
+          `UPDATE connection_secrets SET ciphertext=$2,nonce=$3,auth_tag=$4 WHERE connection_id=$1`,
+          [id, secret.ciphertext, secret.nonce, secret.auth_tag],
+        );
+    });
+  }
   async beginSync(id: string): Promise<string> {
     return this.db.transaction(async (c) => {
       // Recover only expired operations, without disturbing a sync running in another request.
@@ -301,6 +327,9 @@ export class ConnectionsRepository {
       host: row.host,
       port: row.port,
       databaseName: row.database_name,
+      username: row.username,
+      authDatabase: row.auth_database ?? undefined,
+      tls: row.tls,
       lastError: row.last_error,
       importedAt: (row.completed_at ?? row.created_at).toISOString(),
       schemaCount: row.schema_count ?? 0,

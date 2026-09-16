@@ -5,12 +5,13 @@ import {
   Get,
   HttpCode,
   Param,
+  Patch,
   ParseUUIDPipe,
   Post,
   Query,
 } from '@nestjs/common';
 import { ConnectionsService } from './connections.service';
-import { ConnectionDto, ExecuteSqlDto, RowsQueryDto } from './connection.dto';
+import { ConnectionDto, ExecuteSqlDto, RowsQueryDto, UpdateConnectionDto } from './connection.dto';
 import { CurrentUser } from '../auth/current-user.decorator';
 import type { AuthUser } from '../auth/auth.types';
 const uuid = new ParseUUIDPipe({ version: '4' });
@@ -28,6 +29,13 @@ export class ConnectionsController {
   }
   @Get(':id') find(@CurrentUser() user: AuthUser, @Param('id', uuid) id: string) {
     return this.service.find(user.id, id);
+  }
+  @Patch(':id') update(
+    @CurrentUser() user: AuthUser,
+    @Param('id', uuid) id: string,
+    @Body() body: UpdateConnectionDto,
+  ) {
+    return this.service.update(user.id, id, body);
   }
   @Post(':id/sync') @HttpCode(200) refresh(
     @CurrentUser() user: AuthUser,

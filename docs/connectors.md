@@ -61,3 +61,11 @@ streaming и отмена серверной сессии. После DDL кат
 Источники: [pg queries](https://node-postgres.com/features/queries),
 [mysql2](https://sidorares.github.io/node-mysql2/docs),
 [MongoClient](https://www.mongodb.com/docs/drivers/node/current/connect/mongoclient/).
+
+
+## Изменение подключения
+
+Владелец сохранённого подключения может изменить имя, host, порт, базу, пользователя,
+authSource, TLS и описание. Новый пароль передаётся только если он введён; прежний пароль
+никогда не возвращается через API. При сохранении DatabaseEnjoyer проверяет новые реквизиты и
+синхронизирует метаданные.

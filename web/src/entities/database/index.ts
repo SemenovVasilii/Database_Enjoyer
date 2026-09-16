@@ -2,6 +2,7 @@ export { DatabaseCard } from './ui/database-card';
 export {
   useTestConnectionMutation,
   useCreateConnectionMutation,
+  useUpdateConnectionMutation,
   useSyncConnectionMutation,
   useGetRowsQuery,
   useExecuteSqlMutation,

@@ -39,6 +39,9 @@ export interface DatabaseSummary {
   host?: string;
   port?: number;
   databaseName?: string;
+  username?: string;
+  authDatabase?: string;
+  tls?: boolean;
   lastError?: string | null;
   id: string;
   name: string;
@@ -91,6 +94,7 @@ export interface ConnectionInput {
   tls?: boolean;
   description?: string;
 }
+export type UpdateConnectionInput = Omit<ConnectionInput, 'password'> & { password?: string };
 export interface DataPage {
   columns: string[];
   rows: Record<string, unknown>[];

@@ -20,7 +20,8 @@ Swagger в приложении отключён. В production у server нет
 | GET | /connections | Только сохранённые подключения |
 | POST | /connections/test | Проверить реквизиты без сохранения, 200 |
 | POST | /connections | Сохранить профиль и загрузить структуру, 201 |
-| GET | /connections/:id | Активная структура и состояние подключения |
+| GET | /connections/:id | Активная структура, состояние и несекретные реквизиты подключения |
+| PATCH | /connections/:id | Обновить реквизиты и синхронизировать структуру; пустой пароль сохраняет прежний |
 | POST | /connections/:id/sync | Синхронизировать структуру, 200 |
 | GET | /connections/:id/syncs | Последние 20 попыток, без паролей |
 | GET | /connections/:id/objects/:objectId/rows?offset=0&limit=50 | Страница живых данных |

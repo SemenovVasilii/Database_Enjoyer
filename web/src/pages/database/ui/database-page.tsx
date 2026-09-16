@@ -4,6 +4,7 @@ import { Link, useParams } from '@tanstack/react-router';
 import { ArrowLeft, Code2, Database, Layers, Table2 } from 'lucide-react';
 import { useGetDatabaseQuery, useSyncConnectionMutation } from '@/entities/database';
 import { DeleteDatabaseButton } from '@/features/delete-database';
+import { EditConnectionButton } from '@/features/connect-database';
 import { DatabaseExplorer } from '@/widgets/database-explorer';
 import { engineLabels, errorMessage, formatDate } from '@/shared/lib';
 import { Button, ErrorState, LoadingState } from '@/shared/ui';
@@ -67,6 +68,7 @@ export function DatabasePage() {
                       SQL
                     </Link>
                   )}
+                {database.source === 'connection' && <EditConnectionButton connection={database} />}
                 {database.source === 'connection' && (
                   <Button variant="secondary" disabled={syncing} onClick={() => void refresh()}>
                     <RefreshCw size={15} className={syncing ? 'animate-spin' : ''} />
@@ -82,6 +84,28 @@ export function DatabasePage() {
                 />
               </div>
             </div>
+            {database.source === 'connection' && (
+              <dl className="mt-6 grid gap-px overflow-hidden rounded-xl border border-line bg-line sm:grid-cols-2 lg:grid-cols-4">
+                {[
+                  ['Хост', database.host],
+                  ['Порт', database.port],
+                  ['Пользователь', database.username],
+                  ['TLS', database.tls ? 'Включён' : 'Выключен'],
+                ].map(([label, value]) => (
+                  <div key={label} className="bg-surface px-4 py-3">
+                    <dt className="text-[10px] font-medium tracking-wide text-muted uppercase">
+                      {label}
+                    </dt>
+                    <dd
+                      className="mt-1 truncate font-mono text-xs text-secondary"
+                      title={String(value ?? '—')}
+                    >
+                      {value ?? '—'}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            )}
             <div className="mt-6 flex flex-wrap items-center gap-5 text-xs text-muted">
               <span className="flex items-center gap-1.5">
                 <Layers size={14} />

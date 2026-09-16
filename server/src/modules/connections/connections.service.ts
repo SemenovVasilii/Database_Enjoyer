@@ -12,6 +12,7 @@ import { PostgreSQLConnector } from './connectors/postgresql.connector';
 import { MySQLConnector } from './connectors/mysql.connector';
 import { MongoDBConnector } from './connectors/mongodb.connector';
 import { ConnectionsRepository } from './connections.repository';
+import type { UpdateConnectionDto } from './connection.dto';
 import { SecretsService } from './secrets.service';
 
 function connectionError(error: unknown): string {
@@ -65,6 +66,27 @@ export class ConnectionsService {
     } catch (error) {
       if (!(error instanceof BadGatewayException))
         throw error; /* Failed sync is visible in the saved profile; the user can retry. */
+    }
+    return this.find(userId, id);
+  }
+  async update(userId: string, id: string, patch: UpdateConnectionDto) {
+    const current = await this.input(userId, id);
+    const passwordChanged = patch.password !== undefined && patch.password.length > 0;
+    const input: ConnectionInput = {
+      ...current,
+      ...patch,
+      password: passwordChanged ? patch.password! : current.password,
+    };
+    await this.test(input);
+    await this.repository.update(
+      id,
+      input,
+      passwordChanged ? this.secrets.encrypt(id, input.password) : undefined,
+    );
+    try {
+      await this.refresh(userId, id);
+    } catch (error) {
+      if (!(error instanceof BadGatewayException)) throw error;
     }
     return this.find(userId, id);
   }

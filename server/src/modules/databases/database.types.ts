@@ -39,6 +39,9 @@ export interface DatabaseSummary {
   host?: string;
   port?: number;
   databaseName?: string;
+  username?: string;
+  authDatabase?: string;
+  tls?: boolean;
   lastError?: string | null;
   id: string;
   name: string;

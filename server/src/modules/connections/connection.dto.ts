@@ -100,3 +100,65 @@ export class ExecuteSqlDto {
   @Max(1000)
   maxRows = 500;
 }
+
+export class UpdateConnectionDto {
+  @IsOptional()
+  @Transform(trim)
+  @IsString()
+  @MinLength(1)
+  @MaxLength(120)
+  name?: string;
+
+  @IsOptional()
+  @IsIn(['postgresql', 'mysql', 'mongodb'])
+  engine?: ConnectionEngine;
+
+  @IsOptional()
+  @Transform(trim)
+  @IsString()
+  @MinLength(1)
+  @MaxLength(253)
+  @Matches(/^[a-zA-Z0-9.\-:[\]_]+$/)
+  host?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(65535)
+  port?: number;
+
+  @IsOptional()
+  @Transform(trim)
+  @IsString()
+  @MinLength(1)
+  @MaxLength(120)
+  databaseName?: string;
+
+  @IsOptional()
+  @Transform(trim)
+  @IsString()
+  @MinLength(1)
+  @MaxLength(120)
+  username?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  password?: string;
+
+  @IsOptional()
+  @Transform(trim)
+  @IsString()
+  @MaxLength(120)
+  authDatabase?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  tls?: boolean;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  description?: string;
+}

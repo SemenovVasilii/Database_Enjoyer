@@ -5,6 +5,7 @@ import type {
   DatabaseSummary,
   ImportDatabaseInput,
   SqlExecutionResult,
+  UpdateConnectionInput,
 } from '@/shared/api/contracts';
 import { baseApi } from '@/shared/api';
 
@@ -16,6 +17,13 @@ export const databaseApi = baseApi.injectEndpoints({
     >({ query: (body) => ({ url: '/connections/test', method: 'POST', body }) }),
     createConnection: builder.mutation<DatabaseDetails, ConnectionInput>({
       query: (body) => ({ url: '/connections', method: 'POST', body }),
+      invalidatesTags: ['Database'],
+    }),
+    updateConnection: builder.mutation<
+      DatabaseDetails,
+      { id: string; input: UpdateConnectionInput }
+    >({
+      query: ({ id, input }) => ({ url: `/connections/${id}`, method: 'PATCH', body: input }),
       invalidatesTags: ['Database'],
     }),
     syncConnection: builder.mutation<DatabaseDetails, string>({
@@ -64,6 +72,7 @@ export const databaseApi = baseApi.injectEndpoints({
 export const {
   useTestConnectionMutation,
   useCreateConnectionMutation,
+  useUpdateConnectionMutation,
   useSyncConnectionMutation,
   useGetRowsQuery,
   useExecuteSqlMutation,

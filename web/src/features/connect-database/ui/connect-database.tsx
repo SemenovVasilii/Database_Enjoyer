@@ -1,8 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { CheckCircle2, LoaderCircle, Plug, X } from 'lucide-react';
-import { useCreateConnectionMutation, useTestConnectionMutation } from '@/entities/database';
-import type { ConnectionEngine, ConnectionInput } from '@/shared/api/contracts';
+import {
+  useCreateConnectionMutation,
+  useTestConnectionMutation,
+  useUpdateConnectionMutation,
+} from '@/entities/database';
+import type { ConnectionEngine, ConnectionInput, DatabaseDetails } from '@/shared/api/contracts';
 import { engineLabels, errorMessage } from '@/shared/lib';
 import { Button } from '@/shared/ui';
 
@@ -23,23 +27,45 @@ export function ConnectDatabaseButton({ className }: { className?: string }) {
     </>
   );
 }
-function ConnectionDialog({ close }: { close: () => void }) {
+export function ConnectionDialog({
+  close,
+  connection,
+}: {
+  close: () => void;
+  connection?: DatabaseDetails;
+}) {
   const dialog = useRef<HTMLDialogElement>(null);
   const navigate = useNavigate();
-  const [input, setInput] = useState<ConnectionInput>({
-    name: '',
-    engine: 'postgresql',
-    host: 'localhost',
-    port: 5432,
-    databaseName: '',
-    username: '',
-    password: '',
-    tls: false,
-  });
+  const [input, setInput] = useState<ConnectionInput>(() =>
+    connection
+      ? {
+          name: connection.name,
+          engine: connection.engine as ConnectionEngine,
+          host: connection.host ?? '',
+          port: connection.port ?? defaults[connection.engine as ConnectionEngine].port,
+          databaseName: connection.databaseName ?? '',
+          username: connection.username ?? '',
+          password: '',
+          authDatabase: connection.authDatabase,
+          tls: connection.tls ?? false,
+          description: connection.description,
+        }
+      : {
+          name: '',
+          engine: 'postgresql',
+          host: 'localhost',
+          port: 5432,
+          databaseName: '',
+          username: '',
+          password: '',
+          tls: false,
+        },
+  );
   const [test, { isLoading: testing }] = useTestConnectionMutation();
   const [create, { isLoading: saving }] = useCreateConnectionMutation();
+  const [saveChanges, { isLoading: updating }] = useUpdateConnectionMutation();
   const [feedback, setFeedback] = useState<{ error?: string; success?: string }>({});
-  const busy = testing || saving;
+  const busy = testing || saving || updating;
   useEffect(() => {
     dialog.current?.showModal();
   }, []);
@@ -51,7 +77,9 @@ function ConnectionDialog({ close }: { close: () => void }) {
     setFeedback({});
     try {
       if (save) {
-        const result = await create(input).unwrap();
+        const result = connection
+          ? await saveChanges({ id: connection.id, input }).unwrap()
+          : await create(input).unwrap();
         close();
         await navigate({ to: '/databases/$databaseId', params: { databaseId: result.id } });
       } else {
@@ -80,7 +108,7 @@ function ConnectionDialog({ close }: { close: () => void }) {
       >
         <div className="flex items-center justify-between border-b border-line px-6 py-5">
           <h2 id="connection-title" className="text-lg font-semibold">
-            Новое подключение
+            {connection ? 'Изменить подключение' : 'Новое подключение'}
           </h2>
           <button
             type="button"
@@ -94,7 +122,9 @@ function ConnectionDialog({ close }: { close: () => void }) {
         </div>
         <fieldset disabled={busy} className="space-y-4 p-6">
           <p className="text-sm text-muted">
-            Сохраните подключение, чтобы исследовать структуру и читать данные базы.
+            {connection
+              ? 'Измените адрес, пользователя или параметры TLS. Пароль оставьте пустым, чтобы сохранить текущий.'
+              : 'Сохраните подключение, чтобы исследовать структуру и читать данные базы.'}
           </p>
           <label className="block text-xs font-medium text-secondary">
             Тип базы
@@ -252,17 +282,25 @@ function ConnectionDialog({ close }: { close: () => void }) {
           <Button type="button" variant="secondary" disabled={busy} onClick={close}>
             Отмена
           </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            disabled={busy || !input.host || !input.databaseName || !input.username || !input.name}
-            onClick={() => void submit(false)}
-          >
-            {testing && <LoaderCircle size={15} className="animate-spin" />}Проверить
-          </Button>
+          {!connection && (
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={
+                busy || !input.host || !input.databaseName || !input.username || !input.name
+              }
+              onClick={() => void submit(false)}
+            >
+              {testing && <LoaderCircle size={15} className="animate-spin" />}Проверить
+            </Button>
+          )}
           <Button type="submit" disabled={busy}>
             {saving && <LoaderCircle size={15} className="animate-spin" />}
-            {saving ? 'Загружаем структуру…' : 'Подключить'}
+            {saving || updating
+              ? 'Проверяем и обновляем…'
+              : connection
+                ? 'Сохранить изменения'
+                : 'Подключить'}
           </Button>
         </div>
       </form>
