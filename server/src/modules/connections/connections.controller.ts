@@ -9,31 +9,21 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ConnectionsService } from './connections.service';
 import { ConnectionDto, ExecuteSqlDto, RowsQueryDto } from './connection.dto';
 import { CurrentUser } from '../auth/current-user.decorator';
 import type { AuthUser } from '../auth/auth.types';
 const uuid = new ParseUUIDPipe({ version: '4' });
-@ApiTags('connections')
-@ApiBearerAuth()
 @Controller('connections')
 export class ConnectionsController {
   constructor(private readonly service: ConnectionsService) {}
-  @Get() @ApiOperation({ summary: 'List saved connection profiles (without secrets)' }) list(
-    @CurrentUser() user: AuthUser,
-  ) {
+  @Get() list(@CurrentUser() user: AuthUser) {
     return this.service.list(user.id);
   }
-  @Post('test') @HttpCode(200) @ApiOperation({ summary: 'Test credentials without saving' }) test(
-    @Body() body: ConnectionDto,
-  ) {
+  @Post('test') @HttpCode(200) test(@Body() body: ConnectionDto) {
     return this.service.test(body);
   }
-  @Post() @ApiOperation({ summary: 'Save encrypted credentials and synchronize metadata' }) create(
-    @CurrentUser() user: AuthUser,
-    @Body() body: ConnectionDto,
-  ) {
+  @Post() create(@CurrentUser() user: AuthUser, @Body() body: ConnectionDto) {
     return this.service.create(user.id, body);
   }
   @Get(':id') find(@CurrentUser() user: AuthUser, @Param('id', uuid) id: string) {
@@ -49,7 +39,6 @@ export class ConnectionsController {
     return this.service.history(user.id, id);
   }
   @Get(':id/objects/:objectId/rows')
-  @ApiOperation({ summary: 'Read a bounded page of live rows/documents, max 100' })
   rows(
     @CurrentUser() user: AuthUser,
     @Param('id', uuid) id: string,
@@ -60,7 +49,6 @@ export class ConnectionsController {
   }
   @Post(':id/query')
   @HttpCode(200)
-  @ApiOperation({ summary: 'Execute SQL against a saved PostgreSQL or MySQL connection' })
   executeSql(
     @CurrentUser() user: AuthUser,
     @Param('id', uuid) id: string,

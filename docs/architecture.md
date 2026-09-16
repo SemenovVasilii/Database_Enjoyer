@@ -5,7 +5,8 @@
 `web` и `server` — независимые npm-приложения с собственными package.json/lockfile,
 Dockerfile, TypeScript и ESLint. Общих runtime-пакетов, workspace и ORM нет.
 Взаимодействие — REST `/api`; API-типы определены локально в обеих частях.
-Корневой Compose содержит ровно шесть сервисов: web/server/db/test-postgres/test-mysql/test-mongo.
+Основной Compose содержит три сервиса: web, server и db (каталог метаданных).
+`compose.samples.yaml` — отдельный локальный стек из PostgreSQL, MySQL и MongoDB для примеров.
 
 ## Backend
 

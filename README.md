@@ -7,13 +7,14 @@
 дополнительный офлайн-сценарий.
 
 Два независимых приложения: `web` (React, TypeScript, TanStack Router, Tailwind, RTK Query, FSD)
-и `server` (NestJS, TypeScript, нативные драйверы, SQL без ORM). Общий `compose.yaml`
-запускает приложения, PostgreSQL каталога и три тестовых сервера БД.
+и `server` (NestJS, TypeScript, нативные драйверы, SQL без ORM). Основной `compose.yaml` запускает только приложения и PostgreSQL каталога. Учебные
+PostgreSQL, MySQL и MongoDB запускаются отдельно через `compose.samples.yaml`.
 
 ## Быстрый старт
 
 ```sh
 cp .env.example .env
+docker compose -f compose.samples.yaml up -d
 docker compose up -d --build
 npm --prefix server run samples:load
 ```
@@ -28,9 +29,11 @@ npm --prefix server run samples:load
 **SQL-редактор**, выберите подключение и выполните запрос.
 Светлая, тёмная и системная темы выбираются в верхней панели.
 
-- REST: http://localhost:3000/api
-- Swagger: http://localhost:3000/api/docs
+- Web: http://localhost:5173
 - Health: http://localhost:3000/api/health
+
+`server` публикует API только на loopback-интерфейсе. В production его порт вовсе не
+публикуется: web проксирует запросы к `/api` внутри Docker-сети, а Swagger отключён.
 
 ## Документация
 

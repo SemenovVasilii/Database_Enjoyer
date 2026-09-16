@@ -1,0 +1,80 @@
+name: database-enjoyer-samples
+
+services:
+  test-postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${TEST_POSTGRES_USER:-demo}
+      POSTGRES_PASSWORD: ${TEST_POSTGRES_PASSWORD:-demo_postgres}
+      POSTGRES_DB: ${TEST_POSTGRES_DB:-commerce}
+      SAMPLE_POSTGRES_USER: ${SAMPLE_POSTGRES_USER:-enjoyer}
+      SAMPLE_POSTGRES_PASSWORD: ${SAMPLE_POSTGRES_PASSWORD:-enjoyer_postgres}
+    ports:
+      - '127.0.0.1:${TEST_POSTGRES_PORT:-5433}:5432'
+    volumes:
+      - test_postgres_data:/var/lib/postgresql/data
+      - ./server/docker/fixtures/postgres.sql:/docker-entrypoint-initdb.d/001-fixtures.sql:ro
+      - ./server/docker/bootstrap/postgres-samples.sh:/docker-entrypoint-initdb.d/002-samples.sh:ro
+      - ./server/docker/samples:/samples:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
+      interval: 5s
+      timeout: 3s
+      retries: 15
+
+  test-mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${TEST_MYSQL_ROOT_PASSWORD:-demo_mysql_root}
+      MYSQL_DATABASE: ${TEST_MYSQL_DB:-commerce}
+      MYSQL_USER: ${TEST_MYSQL_USER:-demo}
+      MYSQL_PASSWORD: ${TEST_MYSQL_PASSWORD:-demo_mysql}
+      SAMPLE_MYSQL_USER: ${SAMPLE_MYSQL_USER:-enjoyer}
+      SAMPLE_MYSQL_PASSWORD: ${SAMPLE_MYSQL_PASSWORD:-enjoyer_mysql}
+    ports:
+      - '127.0.0.1:${TEST_MYSQL_PORT:-3307}:3306'
+    volumes:
+      - test_mysql_data:/var/lib/mysql
+      - ./server/docker/fixtures/mysql.sql:/docker-entrypoint-initdb.d/001-fixtures.sql:ro
+      - ./server/docker/bootstrap/mysql-samples.sh:/docker-entrypoint-initdb.d/002-samples.sh:ro
+      - ./server/docker/samples:/samples:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'MYSQL_PWD="$$MYSQL_PASSWORD" mysql -h 127.0.0.1 -u "$$MYSQL_USER" "$$MYSQL_DATABASE" -e "SELECT 1"']
+      interval: 5s
+      timeout: 5s
+      start_period: 40s
+      retries: 20
+
+  test-mongo:
+    image: mongo:8.0
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${TEST_MONGO_ROOT_USER:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${TEST_MONGO_ROOT_PASSWORD:-demo_mongo_root}
+      MONGO_INITDB_DATABASE: ${TEST_MONGO_DB:-commerce}
+      TEST_MONGO_USER: ${TEST_MONGO_USER:-demo}
+      TEST_MONGO_PASSWORD: ${TEST_MONGO_PASSWORD:-demo_mongo}
+      SAMPLE_MONGO_USER: ${SAMPLE_MONGO_USER:-enjoyer}
+      SAMPLE_MONGO_PASSWORD: ${SAMPLE_MONGO_PASSWORD:-enjoyer_mongo}
+    ports:
+      - '127.0.0.1:${TEST_MONGO_PORT:-27018}:27017'
+    volumes:
+      - test_mongo_data:/data/db
+      - test_mongo_config:/data/configdb
+      - ./server/docker/fixtures/mongo.js:/docker-entrypoint-initdb.d/001-fixtures.js:ro
+      - ./server/docker/bootstrap/mongo-samples.sh:/docker-entrypoint-initdb.d/002-samples.sh:ro
+      - ./server/docker/samples:/samples:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'mongosh --quiet --host 127.0.0.1 --username "$$MONGO_INITDB_ROOT_USERNAME" --password "$$MONGO_INITDB_ROOT_PASSWORD" --authenticationDatabase admin --eval "quit(db.adminCommand({ping: 1}).ok ? 0 : 1)"']
+      interval: 5s
+      timeout: 5s
+      start_period: 20s
+      retries: 20
+
+volumes:
+  test_postgres_data:
+  test_mysql_data:
+  test_mongo_data:
+  test_mongo_config:

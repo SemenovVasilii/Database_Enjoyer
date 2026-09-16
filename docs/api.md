@@ -1,7 +1,8 @@
 # REST API
 
 Base URL `/api`. JSON; валидация отклоняет неизвестные поля и неверные UUID/порты/лимиты.
-Swagger: http://localhost:3000/api/docs. Секреты присутствуют только в теле POST запроса,
+Swagger в приложении отключён. В production у server нет опубликованного порта: запросы к
+`/api` приходят через web внутри Docker-сети. Секреты присутствуют только в теле POST запроса,
 никогда в GET ответах. Кроме health и `/auth/*`, маршруты требуют
 `Authorization: Bearer <accessToken>`.
 
@@ -55,8 +56,8 @@ Content-Type: application/json
 {
   "name": "PostgreSQL · Pagila",
   "engine": "postgresql",
-  "host": "test-postgres",
-  "port": 5432,
+  "host": "host.docker.internal",
+  "port": 5433,
   "databaseName": "pagila",
   "username": "enjoyer",
   "password": "enjoyer_postgres",
@@ -64,8 +65,8 @@ Content-Type: application/json
 }
 ```
 
-Для MySQL: engine=mysql, host=test-mysql, port=3306, databaseName=sakila,
-password=enjoyer_mysql. Для MongoDB: engine=mongodb, host=test-mongo, port=27017,
+Для MySQL: engine=mysql, host=host.docker.internal, port=3307, databaseName=sakila,
+password=enjoyer_mysql. Для MongoDB: engine=mongodb, host=host.docker.internal, port=27018,
 databaseName=restaurants, authDatabase=restaurants, password=enjoyer_mongo.
 name обязателен; description/authDatabase/tls необязательны. Пароль не обрезается trim.
 

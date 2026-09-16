@@ -12,8 +12,8 @@ Actions не хранит GitHub-токен на сервере. Он копир
 
 ## Production Compose
 
-`compose.prod.yaml` запускает шесть сервисов с production targets и постоянными volumes.
-Только web публикует порт `127.0.0.1:8080`; API, служебный PostgreSQL и sample databases
+`compose.prod.yaml` запускает три production-сервиса: web, server и PostgreSQL каталога
+метаданных. Только web публикует порт `127.0.0.1:8080`; server и служебный PostgreSQL
 доступны лишь внутри Compose-сети. Внешний Nginx завершает TLS. Приложение использует
 passwordless email OTP; рабочие REST-маршруты защищены Bearer JWT и изолированы по владельцу.
 
@@ -89,15 +89,6 @@ ENCRYPTION_KEY=$(openssl rand -hex 32)
 ACCESS_TOKEN_KEY=$(openssl rand -hex 32)
 REFRESH_TOKEN_KEY=$(openssl rand -hex 32)
 OTP_PEPPER=$(openssl rand -hex 32)
-PG_ADMIN_PASSWORD=$(openssl rand -hex 24)
-PG_READER_PASSWORD=$(openssl rand -hex 18)
-MYSQL_ROOT_PASSWORD=$(openssl rand -hex 24)
-MYSQL_ADMIN_PASSWORD=$(openssl rand -hex 24)
-MYSQL_READER_PASSWORD=$(openssl rand -hex 18)
-MONGO_ROOT_PASSWORD=$(openssl rand -hex 24)
-MONGO_ADMIN_PASSWORD=$(openssl rand -hex 24)
-MONGO_READER_PASSWORD=$(openssl rand -hex 18)
-
 sudo tee /opt/database-enjoyer/.env.production >/dev/null <<EOF
 WEB_PORT=8080
 CORS_ORIGIN=https://${APP_DOMAIN}
@@ -113,36 +104,16 @@ AUTH_REFRESH_TOKEN_TTL_HOURS=168
 AUTH_BOOTSTRAP_EMAIL=${AUTH_BOOTSTRAP_EMAIL}
 RESEND_API_KEY=${RESEND_API_KEY}
 RESEND_FROM_EMAIL=${RESEND_FROM_EMAIL}
-TEST_POSTGRES_USER=demo
-TEST_POSTGRES_PASSWORD=${PG_ADMIN_PASSWORD}
-TEST_POSTGRES_DB=commerce
-SAMPLE_POSTGRES_USER=enjoyer
-SAMPLE_POSTGRES_PASSWORD=${PG_READER_PASSWORD}
-TEST_MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
-TEST_MYSQL_USER=demo
-TEST_MYSQL_PASSWORD=${MYSQL_ADMIN_PASSWORD}
-TEST_MYSQL_DB=commerce
-SAMPLE_MYSQL_USER=enjoyer
-SAMPLE_MYSQL_PASSWORD=${MYSQL_READER_PASSWORD}
-TEST_MONGO_ROOT_USER=admin
-TEST_MONGO_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD}
-TEST_MONGO_USER=demo
-TEST_MONGO_PASSWORD=${MONGO_ADMIN_PASSWORD}
-TEST_MONGO_DB=commerce
-SAMPLE_MONGO_USER=enjoyer
-SAMPLE_MONGO_PASSWORD=${MONGO_READER_PASSWORD}
 EOF
 
 sudo chown deployer:deployer /opt/database-enjoyer/.env.production
 sudo chmod 0600 /opt/database-enjoyer/.env.production
 unset METADATA_PASSWORD ENCRYPTION_KEY ACCESS_TOKEN_KEY REFRESH_TOKEN_KEY OTP_PEPPER
-unset AUTH_BOOTSTRAP_EMAIL RESEND_API_KEY RESEND_FROM_EMAIL PG_ADMIN_PASSWORD PG_READER_PASSWORD
-unset MYSQL_ROOT_PASSWORD MYSQL_ADMIN_PASSWORD MYSQL_READER_PASSWORD
-unset MONGO_ROOT_PASSWORD MONGO_ADMIN_PASSWORD MONGO_READER_PASSWORD
+unset AUTH_BOOTSTRAP_EMAIL RESEND_API_KEY RESEND_FROM_EMAIL
 ```
 
-Реквизиты sample users для формы подключения находятся в этом env. Посмотреть их можно
-командой `sudo grep '^SAMPLE_.*PASSWORD' /opt/database-enjoyer/.env.production`.
+Учебные БД не разворачиваются на production-сервере. Подключайте внешние серверы БД либо
+локальные базы через защищённый туннель.
 До первого запуска добавьте домен отправителя в Resend, подтвердите DNS и создайте API key.
 `RESEND_FROM_EMAIL` должен использовать этот домен. `AUTH_BOOTSTRAP_EMAIL` после первого
 успешного входа получает записи каталога, созданные до добавления авторизации.

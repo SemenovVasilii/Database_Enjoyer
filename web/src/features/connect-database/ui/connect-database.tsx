@@ -7,9 +7,9 @@ import { engineLabels, errorMessage } from '@/shared/lib';
 import { Button } from '@/shared/ui';
 
 const defaults: Record<ConnectionEngine, { port: number; host: string; databaseName: string }> = {
-  postgresql: { port: 5432, host: 'test-postgres', databaseName: 'pagila' },
-  mysql: { port: 3306, host: 'test-mysql', databaseName: 'sakila' },
-  mongodb: { port: 27017, host: 'test-mongo', databaseName: 'restaurants' },
+  postgresql: { port: 5433, host: 'host.docker.internal', databaseName: 'pagila' },
+  mysql: { port: 3307, host: 'host.docker.internal', databaseName: 'sakila' },
+  mongodb: { port: 27018, host: 'host.docker.internal', databaseName: 'restaurants' },
 };
 export function ConnectDatabaseButton({ className }: { className?: string }) {
   const [open, setOpen] = useState(false);

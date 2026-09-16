@@ -10,7 +10,6 @@ import {
   ValidateIf,
   ValidateNested,
 } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import type {
   ColumnMetadata,
   DatabaseEngine,
@@ -23,18 +22,48 @@ const trim = ({ value }: { value: unknown }) => (typeof value === 'string' ? val
 const optional = (_object: unknown, value: unknown) => value !== undefined;
 
 class ColumnDto implements ColumnMetadata {
-  @ApiProperty() @Transform(trim) @IsString() @MinLength(1) @MaxLength(120) name!: string;
-  @ApiProperty() @Transform(trim) @IsString() @MinLength(1) @MaxLength(120) dataType!: string;
-  @ApiProperty() @IsBoolean() nullable!: boolean;
-  @ApiPropertyOptional() @ValidateIf(optional) @IsBoolean() primaryKey?: boolean;
-  @ApiPropertyOptional() @ValidateIf(optional) @IsString() @MaxLength(2000) defaultValue?: string;
-  @ApiPropertyOptional() @ValidateIf(optional) @IsString() @MaxLength(2000) comment?: string;
+  @Transform(trim)
+  @IsString()
+  @MinLength(1)
+  @MaxLength(120)
+  name!: string;
+
+  @Transform(trim)
+  @IsString()
+  @MinLength(1)
+  @MaxLength(120)
+  dataType!: string;
+
+  @IsBoolean()
+  nullable!: boolean;
+
+  @ValidateIf(optional)
+  @IsBoolean()
+  primaryKey?: boolean;
+
+  @ValidateIf(optional)
+  @IsString()
+  @MaxLength(2000)
+  defaultValue?: string;
+
+  @ValidateIf(optional)
+  @IsString()
+  @MaxLength(2000)
+  comment?: string;
 }
 
 class TableDto implements TableMetadata {
-  @ApiProperty() @Transform(trim) @IsString() @MinLength(1) @MaxLength(120) name!: string;
-  @ApiPropertyOptional() @ValidateIf(optional) @IsString() @MaxLength(2000) comment?: string;
-  @ApiProperty({ type: [ColumnDto] })
+  @Transform(trim)
+  @IsString()
+  @MinLength(1)
+  @MaxLength(120)
+  name!: string;
+
+  @ValidateIf(optional)
+  @IsString()
+  @MaxLength(2000)
+  comment?: string;
+
   @IsArray()
   @ArrayMaxSize(1000)
   @ValidateNested({ each: true })
@@ -43,8 +72,12 @@ class TableDto implements TableMetadata {
 }
 
 class SchemaDto implements SchemaMetadata {
-  @ApiProperty() @Transform(trim) @IsString() @MinLength(1) @MaxLength(120) name!: string;
-  @ApiProperty({ type: [TableDto] })
+  @Transform(trim)
+  @IsString()
+  @MinLength(1)
+  @MaxLength(120)
+  name!: string;
+
   @IsArray()
   @ArrayMaxSize(1000)
   @ValidateNested({ each: true })
@@ -53,17 +86,20 @@ class SchemaDto implements SchemaMetadata {
 }
 
 export class ImportDatabaseDto implements ImportDatabaseInput {
-  @ApiProperty({ example: 'commerce' })
   @Transform(trim)
   @IsString()
   @MinLength(1)
   @MaxLength(120)
   name!: string;
-  @ApiProperty({ enum: ['postgresql', 'mysql', 'mongodb', 'sqlite', 'mssql', 'other'] })
+
   @IsIn(['postgresql', 'mysql', 'mongodb', 'sqlite', 'mssql', 'other'])
   engine!: DatabaseEngine;
-  @ApiPropertyOptional() @ValidateIf(optional) @IsString() @MaxLength(2000) description?: string;
-  @ApiProperty({ type: [SchemaDto] })
+
+  @ValidateIf(optional)
+  @IsString()
+  @MaxLength(2000)
+  description?: string;
+
   @IsArray()
   @ArrayMaxSize(100)
   @ValidateNested({ each: true })

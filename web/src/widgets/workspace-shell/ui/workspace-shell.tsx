@@ -1,15 +1,6 @@
 import type { ReactNode } from 'react';
 import { Link, useRouterState } from '@tanstack/react-router';
-import {
-  ArrowUpRight,
-  BookOpen,
-  Code2,
-  Database,
-  FileJson,
-  FolderOpen,
-  LogOut,
-  PanelLeft,
-} from 'lucide-react';
+import { Code2, Database, FileJson, FolderOpen, LogOut, PanelLeft } from 'lucide-react';
 import { useDispatch } from 'react-redux';
 import { useGetDatabasesQuery } from '@/entities/database';
 import { clearCredentials, useMeQuery } from '@/features/auth';
@@ -91,22 +82,6 @@ export function WorkspaceShell({ children }: { children: ReactNode }) {
               Подключите базу данных, чтобы начать работу.
             </p>
           )}
-        </div>
-        <div className="m-4 rounded-xl border border-line bg-surface p-4">
-          <BookOpen size={18} className="mb-3 text-muted" />
-          <p className="text-xs font-medium">Ресурсы для работы</p>
-          <p className="mt-2 text-[11px] leading-relaxed text-muted">
-            Описание REST API и моделей метаданных.
-          </p>
-          <a
-            href="/api/docs"
-            target="_blank"
-            rel="noreferrer"
-            className="mt-4 flex items-center justify-between text-xs text-accent"
-          >
-            Документация API
-            <ArrowUpRight size={14} />
-          </a>
         </div>
         <div className="flex items-center gap-3 border-t border-line p-5">
           <div className="flex size-8 items-center justify-center rounded-lg bg-accent/8 text-xs font-semibold text-accent">
