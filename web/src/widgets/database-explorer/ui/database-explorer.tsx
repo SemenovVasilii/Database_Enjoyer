@@ -1,4 +1,5 @@
 import { DataGrid } from '@/features/browse-data';
+import { ErDiagram } from '@/features/er-diagram';
 import { useState } from 'react';
 import { ChevronDown, Columns3, KeyRound, Layers, Search, Table2 } from 'lucide-react';
 import type { DatabaseDetails } from '@/shared/api/contracts';
@@ -7,7 +8,7 @@ export function DatabaseExplorer({ database }: { database: DatabaseDetails }) {
   const [selection, setSelection] = useState<{ schema: string; table: string }>();
   const [search, setSearch] = useState('');
   const [columnSearch, setColumnSearch] = useState('');
-  const [tab, setTab] = useState<'structure' | 'data' | 'indexes' | 'constraints'>(
+  const [tab, setTab] = useState<'structure' | 'diagram' | 'data' | 'indexes' | 'constraints'>(
     database.source === 'connection' ? 'data' : 'structure',
   );
   const tables = database.schemas.flatMap((schema) =>
@@ -114,6 +115,7 @@ export function DatabaseExplorer({ database }: { database: DatabaseDetails }) {
               [
                 ['data', 'Данные'],
                 ['structure', 'Структура'],
+                ['diagram', 'ER-диаграмма'],
                 ['indexes', 'Индексы'],
                 ['constraints', 'Ограничения'],
               ] as const
@@ -133,6 +135,13 @@ export function DatabaseExplorer({ database }: { database: DatabaseDetails }) {
           </div>
           {tab === 'data' && selected.table.id && (
             <DataGrid key={selected.table.id} id={database.id} objectId={selected.table.id} />
+          )}
+          {tab === 'diagram' && (
+            <ErDiagram
+              key={`${database.id}:${database.importedAt}`}
+              database={database}
+              editable={database.source === 'connection'}
+            />
           )}
           {tab === 'structure' && (
             <>

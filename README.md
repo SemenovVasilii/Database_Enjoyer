@@ -47,6 +47,7 @@ npm --prefix server run samples:load
 - [Коннекторы и особенности движков](docs/connectors.md)
 - [REST API](docs/api.md)
 - [SQL-редактор](docs/sql-editor.md)
+- [ER-диаграмма](docs/er-diagram.md)
 - [Участие в разработке](docs/contributing.md)
 - [Тема интерфейса](docs/theming.md)
 
