@@ -3,14 +3,14 @@
 ## Два Compose-стека
 
 `compose.yaml` запускает только DatabaseEnjoyer: web, server и PostgreSQL каталога метаданных.
-Учебные PostgreSQL, MySQL и MongoDB вынесены в независимый `compose.samples.yaml`. Их можно
+Учебные PostgreSQL, MySQL и MongoDB вынесены в независимый каталог
+`../database-enjoyer-test-databases`. Их можно
 останавливать, пересоздавать и обновлять без влияния на пользователей и каталог приложения.
 
 ```sh
 cp .env.example .env
-docker compose -f compose.samples.yaml up -d
+docker compose -f ../database-enjoyer-test-databases/compose.yaml up -d
 docker compose up -d --build
-npm --prefix server run samples:load
 ```
 
 Откройте `http://localhost:5173`. Код входа при пустых Resend-переменных выводится командой
@@ -21,7 +21,7 @@ npm --prefix server run samples:load
 
 ## Учебные базы
 
-`compose.samples.yaml` открывает порты только на loopback-интерфейсе:
+`../database-enjoyer-test-databases/compose.yaml` открывает порты только на loopback-интерфейсе:
 
 | СУБД | Адрес с хоста | Адрес из server Docker | Учебная БД |
 | --- | --- | --- | --- |
@@ -36,7 +36,7 @@ volumes; изменение `SAMPLE_*_PASSWORD` в `.env` не меняет су
 
 | Файл | Назначение |
 | --- | --- |
-| `.env.example` → `.env` | Локальный app, metadata PostgreSQL и отдельные sample databases |
+| `.env.example` → `.env` | Локальный app и metadata PostgreSQL |
 | `server/.env.example` → `server/.env` | Независимый Nest без Docker |
 | `web/.env.example` → `web/.env` | Независимый Vite |
 | `.env.production.example` | Только production app и metadata catalog |
@@ -58,9 +58,8 @@ docker compose exec -T db sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' > m
 
 ```sh
 docker compose ps
-docker compose -f compose.samples.yaml ps
-docker compose -f compose.samples.yaml down
-npm --prefix server run samples:load
+docker compose -f ../database-enjoyer-test-databases/compose.yaml ps
+docker compose -f ../database-enjoyer-test-databases/compose.yaml down
 ```
 
 `docker compose down -v` удаляет каталог метаданных. Для обычных обновлений его не используйте.

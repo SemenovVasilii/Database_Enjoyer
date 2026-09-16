@@ -5,13 +5,16 @@
 Учебные серверы не входят в Compose приложения. Запустите их отдельно:
 
 ```sh
-docker compose -f compose.samples.yaml up -d
+docker compose -f ../database-enjoyer-test-databases/compose.yaml up -d
 ```
+
+Каталог находится рядом с репозиторием приложения. Если тестовые контейнеры были созданы до
+публикации портов, пересоздайте только их: `docker compose -f ../database-enjoyer-test-databases/compose.yaml up -d --force-recreate`.
 
 ## Подключение из web, когда app работает в Docker
 
-Откройте «Подключить базу», выберите движок и нажмите «Подставить адрес и пользователя».
-Введите пароль из таблицы. TLS для локальных контейнеров выключен.
+Откройте «Подключить базу», выберите движок, укажите вариант «В Docker Compose» и нажмите
+«Подставить тестовые реквизиты». TLS для локальных контейнеров выключен.
 
 | Поле | PostgreSQL | MySQL | MongoDB |
 | --- | --- | --- | --- |
@@ -22,14 +25,12 @@ docker compose -f compose.samples.yaml up -d
 | Password | enjoyer_postgres | enjoyer_mysql | enjoyer_mongo |
 | Auth database / authSource | — | — | restaurants |
 
-Это отдельные пользователи для чтения, а не администраторы. Настройки находятся в корневом
-.env.example: SAMPLE_*_USER/PASSWORD и портами TEST_*_PORT.
-Если bootstrap выполнялся с другими значениями, используйте значения вашего .env.
-Форма позволяет изменять все поля.
+Это отдельные пользователи для чтения, а не администраторы. Реквизиты заданы в
+`../database-enjoyer-test-databases/compose.yaml`. Форма позволяет изменять все поля.
 
 ## Если server работает на хосте через npm
 
-Host=localhost, порт PostgreSQL=5433, MySQL=3307, MongoDB=27018.
+Host=127.0.0.1, порт PostgreSQL=5433, MySQL=3307, MongoDB=27018.
 Остальные поля те же. Для server в Docker используйте host.docker.internal с портом хоста;
 эта запись добавлена в основной Compose. Браузер общается с REST; соединяется с целевой БД
 именно server.

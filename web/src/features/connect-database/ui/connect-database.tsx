@@ -10,11 +10,19 @@ import type { ConnectionEngine, ConnectionInput, DatabaseDetails } from '@/share
 import { engineLabels, errorMessage } from '@/shared/lib';
 import { Button } from '@/shared/ui';
 
-const defaults: Record<ConnectionEngine, { port: number; host: string; databaseName: string }> = {
-  postgresql: { port: 5433, host: 'host.docker.internal', databaseName: 'pagila' },
-  mysql: { port: 3307, host: 'host.docker.internal', databaseName: 'sakila' },
-  mongodb: { port: 27018, host: 'host.docker.internal', databaseName: 'restaurants' },
+type LocalRuntime = 'docker' | 'host';
+
+type TestPreset = { port: number; databaseName: string; password: string };
+
+const testPresets: Record<ConnectionEngine, TestPreset> = {
+  postgresql: { port: 5433, databaseName: 'pagila', password: 'enjoyer_postgres' },
+  mysql: { port: 3307, databaseName: 'sakila', password: 'enjoyer_mysql' },
+  mongodb: { port: 27018, databaseName: 'restaurants', password: 'enjoyer_mongo' },
 };
+
+function testHost(runtime: LocalRuntime) {
+  return runtime === 'docker' ? 'host.docker.internal' : '127.0.0.1';
+}
 export function ConnectDatabaseButton({ className }: { className?: string }) {
   const [open, setOpen] = useState(false);
   return (
@@ -42,7 +50,7 @@ export function ConnectionDialog({
           name: connection.name,
           engine: connection.engine as ConnectionEngine,
           host: connection.host ?? '',
-          port: connection.port ?? defaults[connection.engine as ConnectionEngine].port,
+          port: connection.port ?? testPresets[connection.engine as ConnectionEngine].port,
           databaseName: connection.databaseName ?? '',
           username: connection.username ?? '',
           password: '',
@@ -61,6 +69,7 @@ export function ConnectionDialog({
           tls: false,
         },
   );
+  const [runtime, setRuntime] = useState<LocalRuntime>('docker');
   const [test, { isLoading: testing }] = useTestConnectionMutation();
   const [create, { isLoading: saving }] = useCreateConnectionMutation();
   const [saveChanges, { isLoading: updating }] = useUpdateConnectionMutation();
@@ -136,45 +145,67 @@ export function ConnectionDialog({
                 setInput((s) => ({
                   ...s,
                   engine,
-                  port: defaults[engine].port,
+                  port: testPresets[engine].port,
                   authDatabase: engine === 'mongodb' ? s.databaseName : undefined,
                 }));
                 setFeedback({});
               }}
             >
-              {Object.keys(defaults).map((key) => (
+              {Object.keys(testPresets).map((key) => (
                 <option key={key} value={key}>
                   {engineLabels[key as ConnectionEngine]}
                 </option>
               ))}
             </select>
           </label>
-          <div className="flex flex-wrap items-center gap-2 rounded-lg bg-elevated p-3">
-            <span className="text-xs text-muted">Локальная тестовая БД:</span>
-            <button
-              type="button"
-              className="text-xs font-medium text-accent"
-              onClick={() => {
-                const preset = defaults[input.engine];
-                setInput((s) => ({
-                  ...s,
-                  ...preset,
-                  name: engineLabels[s.engine] + ' · ' + preset.databaseName,
-                  username: 'enjoyer',
-                  password: '',
-                  authDatabase: s.engine === 'mongodb' ? preset.databaseName : undefined,
-                  tls: false,
-                }));
-                setFeedback({});
-              }}
-            >
-              Подставить адрес и пользователя
-            </button>
-            <p className="w-full text-[11px] text-muted">
-              Пароли — в корневом .env.example и docs/test-databases.md. Пример адреса рассчитан на
-              запуск через Docker Compose.
-            </p>
-          </div>
+          {!connection && (
+            <div className="rounded-lg border border-line bg-elevated p-4">
+              <p className="text-xs font-semibold text-secondary">
+                Учебные базы на этом компьютере
+              </p>
+              <p className="mt-1 text-[11px] leading-relaxed text-muted">
+                Запускаются отдельным Compose в <code>../database-enjoyer-test-databases</code>.
+                Кнопка ниже заполнит реальный адрес, базу, пользователя <code>enjoyer</code> и
+                тестовый пароль.
+              </p>
+              <label className="mt-3 block text-[11px] font-semibold text-muted">
+                ГДЕ РАБОТАЕТ SERVER
+                <select
+                  className="field mt-1.5 text-xs"
+                  value={runtime}
+                  onChange={(event) => setRuntime(event.target.value as LocalRuntime)}
+                >
+                  <option value="docker">В Docker Compose — host.docker.internal</option>
+                  <option value="host">Через npm на Mac — 127.0.0.1</option>
+                </select>
+              </label>
+              <button
+                type="button"
+                className="mt-3 text-xs font-semibold text-accent hover:text-accent-hover"
+                onClick={() => {
+                  const preset = testPresets[input.engine];
+                  setInput((state) => ({
+                    ...state,
+                    host: testHost(runtime),
+                    port: preset.port,
+                    databaseName: preset.databaseName,
+                    name: `${engineLabels[state.engine]} · ${preset.databaseName}`,
+                    username: 'enjoyer',
+                    password: preset.password,
+                    authDatabase: state.engine === 'mongodb' ? 'restaurants' : undefined,
+                    tls: false,
+                  }));
+                  setFeedback({});
+                }}
+              >
+                Подставить тестовые реквизиты
+              </button>
+              <p className="mt-2 text-[11px] text-muted">
+                PostgreSQL: 5433 · MySQL: 3307 · MongoDB: 27018. Для MongoDB применяется
+                <code> authSource=restaurants</code>.
+              </p>
+            </div>
+          )}
           <label className="block text-xs font-medium text-secondary">
             Название подключения
             <input
@@ -263,8 +294,9 @@ export function ConnectionDialog({
             TLS с проверкой сертификата
           </label>
           <p className="text-[11px] leading-relaxed text-muted">
-            Адрес должен быть доступен серверу приложения. Если БД работает на вашем компьютере, а
-            сервер — в Docker, используйте host.docker.internal и порт БД на хосте.
+            Соединение создаёт server, а не браузер. Для Docker используйте
+            <code> host.docker.internal</code>; для server, запущенного через npm на Mac, —
+            <code> 127.0.0.1</code>. Внешняя БД должна быть доступна именно с машины server.
           </p>
           {feedback.error && (
             <p role="alert" className="text-xs text-danger">

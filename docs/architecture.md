@@ -6,7 +6,7 @@
 Dockerfile, TypeScript и ESLint. Общих runtime-пакетов, workspace и ORM нет.
 Взаимодействие — REST `/api`; API-типы определены локально в обеих частях.
 Основной Compose содержит три сервиса: web, server и db (каталог метаданных).
-`compose.samples.yaml` — отдельный локальный стек из PostgreSQL, MySQL и MongoDB для примеров.
+`../database-enjoyer-test-databases/compose.yaml` — отдельный локальный стек из PostgreSQL, MySQL и MongoDB для примеров.
 
 ## Backend
 

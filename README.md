@@ -8,23 +8,22 @@
 
 Два независимых приложения: `web` (React, TypeScript, TanStack Router, Tailwind, RTK Query, FSD)
 и `server` (NestJS, TypeScript, нативные драйверы, SQL без ORM). Основной `compose.yaml` запускает только приложения и PostgreSQL каталога. Учебные
-PostgreSQL, MySQL и MongoDB запускаются отдельно через `compose.samples.yaml`.
+PostgreSQL, MySQL и MongoDB запускаются отдельно из соседнего каталога `../database-enjoyer-test-databases`.
 
 ## Быстрый старт
 
 ```sh
 cp .env.example .env
-docker compose -f compose.samples.yaml up -d
+docker compose -f ../database-enjoyer-test-databases/compose.yaml up -d
 docker compose up -d --build
-npm --prefix server run samples:load
 ```
 
-На пустых volumes учебные базы загружаются автоматически. Последняя команда нужна
-для volumes, созданных раньше; существующие базы примеров она не перезаписывает.
+На пустых volumes учебные базы загружаются автоматически. Если контейнеры уже запускались без
+опубликованных портов, примените `docker compose -f ../database-enjoyer-test-databases/compose.yaml up -d --force-recreate`.
 
 Откройте http://localhost:5173, войдите по email и возьмите локальный код из
 `docker compose logs server`. Затем нажмите **Подключить базу** → выберите движок →
-**Подставить адрес и пользователя** → введите пароль из [реквизитов](docs/test-databases.md) →
+выберите, где запущен server → **Подставить тестовые реквизиты** →
 **Проверить** → **Подключить**. Откройте объект и вкладку **Данные** либо перейдите в
 **SQL-редактор**, выберите подключение и выполните запрос.
 Светлая, тёмная и системная темы выбираются в верхней панели.
